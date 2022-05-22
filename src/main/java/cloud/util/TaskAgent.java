@@ -12,8 +12,15 @@ import java.util.Map;
  */
 @Data
 public class TaskAgent {
+    // 子任务序列
     private List<Integer> subTaskList;
+    // 子任务的价值
     private List<Integer> subTaskRewardList;
-
+    // 加工开始时间
+    private Integer processStartTime;
+    // 加工截止时间
+    private Integer processEndTime;
     private Map<Integer, Integer> subTaskMap;
+    // 关于加工工序相关的信息
+    private Map<Integer, int[]> processInfoMap;
 }

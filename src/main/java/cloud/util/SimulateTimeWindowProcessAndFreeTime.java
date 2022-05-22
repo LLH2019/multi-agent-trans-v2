@@ -144,7 +144,7 @@ public class SimulateTimeWindowProcessAndFreeTime {
                     resourceAgents.get(selectedAgentNo).setHaveAssignedTimeSet(processTimeSet);
                     startTime = selectedTime + 1;
                     long curSystemTime = System.currentTimeMillis();
-                    System.out.print(curSystemTime-systemStartTime + " ");
+//                    System.out.print(curSystemTime-systemStartTime + " ");
 //                subTaskList.add();
                 }
                 if (tag) {

@@ -9,6 +9,6 @@ import lombok.Data;
  */
 @Data
 public class TimeAndEValue {
-    int [][] relationValues;
-    boolean tag;
+    public int [][] relationValues;
+    public boolean tag;
 }

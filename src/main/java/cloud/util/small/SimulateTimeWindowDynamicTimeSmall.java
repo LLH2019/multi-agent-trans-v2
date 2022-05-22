@@ -1,58 +1,25 @@
-package cloud.util;
+package cloud.util.small;
+
+import cloud.util.ResourceAgent;
+import cloud.util.ResourceAgentTag;
+import cloud.util.TaskAgent;
+import cloud.util.TimeAndEValue;
 
 import java.util.*;
+
 
 /**
  * @author ：LLH
  * @date ：Created in 2022/4/6 21:16
  * @description：仿真时间窗口
  */
-public class SimulateTimeWindowDynamicTimeRound {
-    static int resourceSize  = 20;
-    static int baseEndTime = 210*8*5;
+public class SimulateTimeWindowDynamicTimeSmall {
 
-    public List<ResourceAgent> simulationResourceAgents(int finishTime) {
-        List<ResourceAgent> resourceAgents = new ArrayList<>();
-        Random random = new Random();
-        List<Integer> aveProcessTime = new ArrayList<>();
-        int lowProcessTime = 160;
-        for (int i=0; i<100; i++) {
-            aveProcessTime.add(lowProcessTime+i);
-        }
+    static int resourceSize = 5;
+    static int taskSize = 10;
+    static int processSum = 6;
 
-
-        for (int i=0; i<resourceSize; i++) {
-            ResourceAgent resourceAgent = new ResourceAgent();
-            resourceAgent.setResourceNo(i);
-            Map<Integer, Integer> processCostMap = new HashMap<>();
-            Map<Integer, Integer> processTimeMap = new HashMap<>();
-            List<int[]> undressedTimeSectionList = new ArrayList<>();
-            for (int j=0; j<80; j++) {
-
-                int type = random.nextInt(100);
-                if (processCostMap.containsKey(type)) {
-                    j--;
-                    continue;
-                }
-//                int value = random.nextInt(25)+6;
-                int cost = random.nextInt(150)+75;
-                processCostMap.put(type, cost);
-//                int time = random.nextInt(100)+160;
-                int time = aveProcessTime.get(type);
-                processTimeMap.put(type, time);
-            }
-            undressedTimeSectionList.add(new int[] {0,finishTime});
-
-            resourceAgent.setProcessCostMap(processCostMap);
-            resourceAgent.setProcessTimeMap(processTimeMap);
-            resourceAgent.setUndressedTimeSectionList(undressedTimeSectionList);
-            resourceAgent.setHaveAssignedTimeSet(new HashSet<>());
-            resourceAgents.add(resourceAgent);
-        }
-        return resourceAgents;
-    }
-
-    public static int[] getRelativeValue(int finishTime) {
+    public static int[] simulateValue(int finishTime) {
         List<Integer> allocatedList = new ArrayList<>();
         List<Integer> unAllocatedList = new ArrayList<>();
         List<Integer> totalCostList = new ArrayList<>();
@@ -60,10 +27,21 @@ public class SimulateTimeWindowDynamicTimeRound {
         List<Integer> totalAllProcessCostList = new ArrayList<>();
         List<Integer> averageCostList = new ArrayList<>();
 
-        for (int round = 0; round < 10; round++) {
-            SimulateTimeWindowDynamicTimeRound simulateTimeWindow = new SimulateTimeWindowDynamicTimeRound();
-            List<ResourceAgent> resourceAgents = simulateTimeWindow.simulationResourceAgents(finishTime);
-            Random random = new Random();
+        int totalSubTaskReward = 0;
+        int totalProcessCost = 0;
+        int totalTransferCost = 0;
+
+        for (int round = 0; round < 1; round++) {
+            List<int[]> showDataList = new ArrayList<>();
+
+            SmallDataSimulation smallDataSimulation = new SmallDataSimulation();
+            SituationData situationData = smallDataSimulation.readTxt();
+            int[][] transferTime = situationData.getTransferTime();
+            int[][] transferCost = situationData.getTransferCost();
+            List<ResourceAgent> resourceAgents = situationData.getResourceAgents();
+            List<TaskAgent> taskAgents = situationData.getTaskAgents();
+
+
             int allocated = 0;
             int unallcated = 0;
             int totalCost = 0;
@@ -74,31 +52,28 @@ public class SimulateTimeWindowDynamicTimeRound {
 
             int finishAllocated = 0;
 
-            for (int i = 0; i < 1000; i++) {
-                TaskAgent taskAgent = new TaskAgent();
-                Map<Integer, Integer> subTaskMap = new HashMap<>();
-                List<Integer> subTaskList = new ArrayList<>();
-                for (int j = 0; j < 8; j++) {
-                    subTaskList.add(random.nextInt(100));
-                }
+            for (int i = 0; i < taskAgents.size(); i++) {
+                TaskAgent taskAgent = taskAgents.get(i);
+                List<Integer> subTaskList = taskAgent.getSubTaskList();
+                List<Integer> subTaskRewardList = taskAgent.getSubTaskRewardList();
+
+                Map<Integer, int[]> processInfoMap = new HashMap<>();
 
                 int curTaskCost = 0;
-                long startSystemTime = System.currentTimeMillis();
-
                 int tagNum = 0;
                 boolean tag = true;
                 Map<Integer, ResourceAgentTag> resourceAgentTagMap = new HashMap<>();
 
 
                 TimeAndEValue[][] timeAndEValues = new TimeAndEValue[8][20];
-                for (int m = 0; m < 8; m++) {
-                    for (int n = 0; n < 20; n++) {
+                for (int m = 0; m < processSum; m++) {
+                    for (int n = 0; n < resourceSize; n++) {
                         timeAndEValues[m][n] = new TimeAndEValue();
                     }
                 }
 
                 int firstProcessNo = subTaskList.get(0);
-                for (int k = 0; k < 20; k++) {
+                for (int k = 0; k < resourceSize; k++) {
                     ResourceAgent resourceAgent = resourceAgents.get(k);
                     if (!resourceAgent.getProcessTimeMap().containsKey(firstProcessNo)) {
                         timeAndEValues[0][k].tag = false;
@@ -124,14 +99,16 @@ public class SimulateTimeWindowDynamicTimeRound {
                 }
 
 //                System.out.println("222222");
-
-                for (int j = 1; j < 8; j++) {
+                totalSubTaskReward += taskAgent.getSubTaskRewardList().get(0);
+                for (int j = 1; j < processSum; j++) {
                     int processNo = subTaskList.get(j);
+                    totalSubTaskReward += taskAgent.getSubTaskRewardList().get(j);
+
 //                    int reward = random.nextInt();
 //                    subTaskMap.put(processNo, reward);
 
 //                    System.out.println(j + " 444");
-                    for (int k = 0; k < 20; k++) {
+                    for (int k = 0; k < resourceSize; k++) {
 //                        System.out.print(k+ " ");
                         ResourceAgent resourceAgent = resourceAgents.get(k);
                         if (!resourceAgent.getProcessTimeMap().containsKey(processNo)) {
@@ -139,15 +116,16 @@ public class SimulateTimeWindowDynamicTimeRound {
                         } else {
                             List<int[]> relationValueList = new ArrayList<>();
 
-                            for (int p = 0; p < 20; p++) {
+                            for (int p = 0; p < resourceSize; p++) {
                                 TimeAndEValue preTimeAndValue = timeAndEValues[j - 1][p];
                                 if (preTimeAndValue.tag == false) {
                                     continue;
                                 } else {
                                     int[][] preRelationValues = preTimeAndValue.getRelationValues();
+                                    ResourceAgent preResourceAgent = resourceAgents.get(p);
                                     for (int[] preRelationValue : preRelationValues) {
                                         // 取得当前的relativeValue值
-                                        int[] curRelationValueMore = getCurRelationValue(preRelationValue, resourceAgent, processNo, preRelationValue[0], finishTime);
+                                        int[] curRelationValueMore = getCurRelationValueMore(preRelationValue, preResourceAgent,resourceAgent, transferTime, processNo, preRelationValue[0], finishTime);
                                         if (curRelationValueMore[0] == -1) {
                                             continue;
                                         } else {
@@ -194,9 +172,9 @@ public class SimulateTimeWindowDynamicTimeRound {
                 int selectedFinalResource = -1;
                 int minCost = Integer.MAX_VALUE;
                 int[] selectedValue = new int[4];
-                for (int k = 0; k < 20; k++) {
-                    if (timeAndEValues[7][k].tag == true) {
-                        int[][] relationValues = timeAndEValues[7][k].relationValues;
+                for (int k = 0; k < resourceSize; k++) {
+                    if (timeAndEValues[processSum-1][k].tag == true) {
+                        int[][] relationValues = timeAndEValues[processSum-1][k].relationValues;
                         for (int[] value : relationValues) {
                             if (value[1] < minCost) {
                                 selectedFinalResource = k;
@@ -216,22 +194,35 @@ public class SimulateTimeWindowDynamicTimeRound {
                 int finishTagNum = 0;
 //                System.out.print(minCost + " ");
                 totalCost += minCost;
+                totalProcessCost += minCost;
                 int selectedTagNum = selectedValue[2];
                 ResourceAgentTag resourceAgentTag = resourceAgentTagMap.get(selectedTagNum);
 //                System.out.println("resourceAgentTag " + resourceAgentTag);
-                if (simulateTimeWindow.addHandleTime(resourceAgentTag.getResourceAgent(), resourceAgentTag.getStartTime(), resourceAgentTag.getEndTime()))
+                if (addHandleTime(resourceAgentTag.getResourceAgent(), resourceAgentTag.getStartTime(), resourceAgentTag.getEndTime())) {
                     finishTagNum++;
-
+                    int [] showData = new int[] {resourceAgentTag.getResourceAgent().getResourceNo(), resourceAgentTag.getStartTime(),
+                            resourceAgentTag.getEndTime(), i};
+                    showDataList.add(showData);
+                }
 
                 totalProcessTime += (resourceAgentTag.getEndTime() - resourceAgentTag.getStartTime());
-                for (int j = 7; j >= 1; j--) {
+//                int preHandleAgent = -1;
+                for (int j = processSum-1; j >= 1; j--) {
                     selectedTagNum = resourceAgentTag.getPreResourceTag();
+                    ResourceAgentTag preResourceTag  = resourceAgentTag;
+
                     resourceAgentTag = resourceAgentTagMap.get(selectedTagNum);
                     totalProcessTime += (resourceAgentTag.getEndTime() - resourceAgentTag.getStartTime());
-                    if (simulateTimeWindow.addHandleTime(resourceAgentTag.getResourceAgent(), resourceAgentTag.getStartTime(), resourceAgentTag.getEndTime()))
+                    if (addHandleTime(resourceAgentTag.getResourceAgent(), resourceAgentTag.getStartTime(), resourceAgentTag.getEndTime())) {
                         finishTagNum++;
+                        int [] showData = new int[] {resourceAgentTag.getResourceAgent().getResourceNo(), resourceAgentTag.getStartTime(),
+                                resourceAgentTag.getEndTime(), i};
+                        showDataList.add(showData);
+                    }
+                    System.out.println("resourceAgentTag.getResourceAgent().getResourceNo() " + preResourceTag.getResourceAgent().getResourceNo() + " " + resourceAgentTagMap.get(selectedTagNum).getResourceAgent().getResourceNo());
+                    totalTransferCost += transferCost[preResourceTag.getResourceAgent().getResourceNo()][resourceAgentTagMap.get(selectedTagNum).getResourceAgent().getResourceNo()];
                 }
-                if (finishTagNum >= 8) {
+                if (finishTagNum >= processSum) {
 //                    System.out.println("11111");
                     finishAllocated++;
                 }
@@ -248,12 +239,50 @@ public class SimulateTimeWindowDynamicTimeRound {
 
 //                subTaskList.add();
                 if (tag) {
-//                    totalCost += curCost;
                     allocated++;
                 }
-                taskAgent.setSubTaskMap(subTaskMap);
-                long curSystemTime = System.currentTimeMillis();
-                System.out.println("time-gap " + (curSystemTime-startSystemTime));
+
+            }
+            Collections.sort(showDataList, (a, b) -> {
+                if (a[0] != b[0]) {
+                    return a[0]-b[0];
+                } else {
+                    return a[1]-b[1];
+                }
+            });
+
+            Map<Integer, List<int[]>> showDataMap = new HashMap<>();
+            for (int i=0; i<5; i++) {
+                showDataMap.put(i, new ArrayList<>());
+            }
+
+            for (int[] data : showDataList) {
+                List<int[]> curDataList = showDataMap.get(data[0]);
+                curDataList.add(data);
+            }
+
+            for (Map.Entry<Integer, List<int[]>> entry : showDataMap.entrySet()) {
+                StringBuffer sbST = new StringBuffer();
+                StringBuffer sbET = new StringBuffer();
+                StringBuffer sbAS = new StringBuffer();
+
+                List<int[]> ff = entry.getValue();
+                for (int[] f : ff) {
+                    sbST.append(f[1]);
+                    sbST.append(',');
+                    sbET.append(f[2]);
+                    sbET.append(',');
+                    sbAS.append(f[3]+1);
+                    sbAS.append(',');
+                }
+                sbST.deleteCharAt(sbST.length()-1);
+                sbET.deleteCharAt(sbET.length()-1);
+                sbAS.deleteCharAt(sbAS.length()-1);
+
+                System.out.println();
+                System.out.println( "m" + entry.getKey() +".O_start = [" + sbST.toString() + "]");
+                System.out.println("m" + entry.getKey() +".O_end = [" + sbET.toString() + "]");
+                System.out.println("m" + entry.getKey() +".assigned_task = [" + sbAS.toString() + "]");
             }
 
             allocatedList.add(allocated);
@@ -266,6 +295,11 @@ public class SimulateTimeWindowDynamicTimeRound {
 //            System.out.println(allocated + " " + unallcated + " " + totalCost + " " + totalCost/(allocated) + " " + totalProcess + " " +totalAllProcessCost/totalProcess + " "
 //                    + totalConnectTime + " " + totalConnectTime/totalProcess + " ");
         }
+
+        System.out.println("real totalSubTaskReward " + totalSubTaskReward);
+        System.out.println("real totalProcessCost " + totalProcessCost);
+        System.out.println("real totalTransferCost" + totalTransferCost);
+
         int[] res = new int[5];
         res[0] = (int) allocatedList.stream().mapToInt(Integer::intValue).average().getAsDouble();
         res[1] = (int) averageCostList.stream().mapToInt(Integer::intValue).average().getAsDouble();
@@ -274,8 +308,8 @@ public class SimulateTimeWindowDynamicTimeRound {
 
     public static void main(String[] args) {
         List<int[]> res = new ArrayList<>();
-        for (int i=1; i<=8; i++) {
-            res.add(getRelativeValue(baseEndTime*i));
+        for (int i=1; i<=1; i++) {
+            res.add(simulateValue(SmallDataSimulation.baseEndTime*i));
         }
         for (int i=0; i<res.size(); i++) {
             System.out.print(res.get(i)[0] + ",");
@@ -307,14 +341,19 @@ public class SimulateTimeWindowDynamicTimeRound {
         return new int[]{-1,-1};
     }
 
-    private static int[] getCurRelationValue(int[] preRelationValue, ResourceAgent resourceAgent, int processNo, int startTime, int endTime) {
+    private static int[] getCurRelationValueMore(int[] preRelationValue, ResourceAgent preResourceAgent, ResourceAgent resourceAgent, int[][] transferTime, int processNo, int startTime, int endTime) {
         Map<Integer, Integer> processTimeMap = resourceAgent.getProcessTimeMap();
         if (!processTimeMap.containsKey(processNo)) {
             return new int[]{-1,-1};
         }
+        int distanceTime = 0;
+        if (preResourceAgent != null) {
+            distanceTime = transferTime[preResourceAgent.getResourceNo()][resourceAgent.getResourceNo()];
+        }
+
         List<int[]> undressedTimeSectionList = resourceAgent.getUndressedTimeSectionList();
         for (int[] section : undressedTimeSectionList) {
-            int maxStart = Math.max(section[0], startTime);
+            int maxStart = Math.max(section[0], startTime)+distanceTime;
             int minEnd = Math.min(section[1],endTime);
             if (minEnd-maxStart >= processTimeMap.get(processNo)) {
                 return new  int[]{maxStart,maxStart+processTimeMap.get(processNo), preRelationValue[1]+resourceAgent.getProcessCostMap().get(processNo), preRelationValue[2]};
@@ -324,7 +363,7 @@ public class SimulateTimeWindowDynamicTimeRound {
 
     }
 
-    private boolean addHandleTime(ResourceAgent resourceAgent, int startTime, int endTime) {
+    public static boolean addHandleTime(ResourceAgent resourceAgent, int startTime, int endTime) {
         List<int[]> undressedTimeSectionList = resourceAgent.getUndressedTimeSectionList();
 //        System.out.println("undressedTimeSectionList " + undressedTimeSectionList.size());
         boolean tag = false;
