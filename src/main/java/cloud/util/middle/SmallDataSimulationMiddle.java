@@ -1,7 +1,8 @@
-package cloud.util.small;
+package cloud.util.middle;
 
 import cloud.util.ResourceAgent;
 import cloud.util.TaskAgent;
+import cloud.util.small.SituationData;
 
 import java.io.*;
 import java.util.*;
@@ -11,11 +12,12 @@ import java.util.*;
  * @date ：Created in 2022/4/25 15:34
  * @description：小规模数据仿真
  */
-public class SmallDataSimulation {
-    public static int resourceSize  = 5;
-    public static int taskSize = 10;
-    public static int totalProcessNum = 25;
-    public static int baseEndTime = 200*6*5;
+public class SmallDataSimulationMiddle {
+    static int resourceSize  = 20;
+    static int taskSize = 20;
+    static int totalProcessNum = 160;
+    static int baseEndTime = 200*40*8;
+    static int perTaskProcessNum = 8;
 
     public static int[][] getTransferTime(int resourceSize) {
         Random random = new Random();
@@ -93,7 +95,7 @@ public class SmallDataSimulation {
             TaskAgent taskAgent = new TaskAgent();
             List<Integer> subTaskList = new ArrayList<>();
             List<Integer> subTaskRewardList = new ArrayList<>();
-            for (int j=0; j<6; j++) {
+            for (int j=0; j<perTaskProcessNum; j++) {
                 subTaskList.add(random.nextInt(totalProcessNum));
                 subTaskRewardList.add(random.nextInt(3000)+1500);
             }
@@ -116,7 +118,7 @@ public class SmallDataSimulation {
         situationData.setResourceAgents(simulationResourceAgents(baseEndTime));
         situationData.setTaskAgents(simulateTaskAgents(baseEndTime));
         try {
-            File writeName = new File("D:\\Coding\\JavaProject\\multi-agent-trans-v2\\data\\small-scale" + resourceSize + "-" + taskSize + "1.txt"); // 相对路径，如果没有则要建立一个新的output.txt文件
+            File writeName = new File("D:\\Coding\\JavaProject\\multi-agent-trans-v2\\data\\middle-scale" + resourceSize + "-" + taskSize + "-1.txt"); // 相对路径，如果没有则要建立一个新的output.txt文件
             if (!writeName.exists()) {
                 writeName.createNewFile(); // 创建新文件,有同名的文件的话直接覆盖
             }
@@ -220,7 +222,7 @@ public class SmallDataSimulation {
         try {
             // 防止文件建立或读取失败，用catch捕捉错误并打印，也可以throw
             /* 读入TXT文件 */
-            String pathname = "D:\\Coding\\JavaProject\\multi-agent-trans-v2\\data\\small-scale" + resourceSize + "-" + taskSize + "1.txt"; // 绝对路径或相对路径都可以，这里是绝对路径，写入文件时演示相对路径
+            String pathname = "D:\\Coding\\JavaProject\\multi-agent-trans-v2\\data\\middle-scale" + resourceSize + "-" + taskSize + "-1.txt"; // 绝对路径或相对路径都可以，这里是绝对路径，写入文件时演示相对路径
             File filename = new File(pathname); // 要读取以上路径的input。txt文件
             InputStreamReader reader = new InputStreamReader(
                     new FileInputStream(filename)); // 建立一个输入流对象reader
@@ -305,9 +307,121 @@ public class SmallDataSimulation {
         return situationData;
     }
 
+    public void generatePythonData() {
+        SmallDataSimulationMiddle smallDataSimulationMiddle = new SmallDataSimulationMiddle();
+        SituationData situationData = smallDataSimulationMiddle.readTxt();
+
+        int [][][] processTime = new int[taskSize][perTaskProcessNum][resourceSize];
+        int [][][] processCost = new int[taskSize][perTaskProcessNum][resourceSize];
+        for (int i=0; i<taskSize; i++) {
+            for (int j=0; j<perTaskProcessNum; j++) {
+                for (int k=0; k<resourceSize; k++) {
+                    processTime[i][j][k] = 99999;
+                    processCost[i][j][k] = 99999;
+                }
+            }
+        }
+        Map<Integer, Map<Integer,Integer>> processTimeAgentMap = new HashMap<>();
+        Map<Integer, Map<Integer,Integer>> processCostAgentMap = new HashMap<>();
+        for (ResourceAgent resourceAgent : situationData.getResourceAgents()) {
+           processTimeAgentMap.put(resourceAgent.getResourceNo(), resourceAgent.getProcessTimeMap());
+           processCostAgentMap.put(resourceAgent.getResourceNo(), resourceAgent.getProcessCostMap());
+        }
+        int curTaskNo = 0;
+        for (TaskAgent taskAgent : situationData.getTaskAgents()) {
+            List<Integer> subTaskList = taskAgent.getSubTaskList();
+            List<Integer> subTaskRewardList = taskAgent.getSubTaskRewardList();
+            int curTaskProcessNumNo = 0;
+            for (int subTask : subTaskList) {
+                for (Map.Entry<Integer,Map<Integer, Integer>> processTimeMap : processTimeAgentMap.entrySet()) {
+                    int curResourceNo = processTimeMap.getKey();
+                    if (processTimeMap.getValue().containsKey(subTask)) {
+                        int timeValue = processTimeMap.getValue().get(subTask);
+                        processTime[curTaskNo][curTaskProcessNumNo][curResourceNo] = timeValue;
+                    }
+                }
+
+                for (Map.Entry<Integer,Map<Integer, Integer>> processCostMap : processCostAgentMap.entrySet()) {
+                    int curResourceNo = processCostMap.getKey();
+                    if (processCostMap.getValue().containsKey(subTask)) {
+                        int costValue = processCostMap.getValue().get(subTask);
+                        processCost[curTaskNo][curTaskProcessNumNo][curResourceNo] = costValue;
+                    }
+                }
+                curTaskProcessNumNo++;
+            }
+            curTaskNo++;
+        }
+
+        System.out.println("time ");
+        StringBuffer timeSb = new StringBuffer();
+        timeSb.append("[");
+        for (int i=0; i<taskSize; i++) {
+            timeSb.append("[");
+            for (int j=0; j<perTaskProcessNum; j++) {
+                timeSb.append("[");
+                for (int k=0; k<resourceSize; k++) {
+                    timeSb.append(processTime[i][j][k] + ",");
+//                    System.out.print(processCost[i][j][k]  + " ");
+                }
+                timeSb.deleteCharAt(timeSb.length()-1);
+                timeSb.append("],");
+            }
+            timeSb.deleteCharAt(timeSb.length()-1);
+            timeSb.append("],");
+        }
+        timeSb.deleteCharAt(timeSb.length()-1);
+        timeSb.append("]");
+        System.out.println(timeSb.toString());
+
+        StringBuffer costSb = new StringBuffer();
+        costSb.append("[");
+        for (int i=0; i<taskSize; i++) {
+            costSb.append("[");
+            for (int j=0; j<perTaskProcessNum; j++) {
+                costSb.append("[");
+                for (int k=0; k<resourceSize; k++) {
+                    costSb.append(processCost[i][j][k] + ",");
+//                    System.out.print(processCost[i][j][k]  + " ");
+                }
+                costSb.deleteCharAt(costSb.length()-1);
+                costSb.append("],");
+            }
+            costSb.deleteCharAt(costSb.length()-1);
+            costSb.append("],");
+        }
+        costSb.deleteCharAt(costSb.length()-1);
+        costSb.append("]");
+        System.out.println(costSb.toString());
+
+        int[][] transferCost = situationData.getTransferCost();
+        StringBuffer transferCostSb = new StringBuffer();
+        transferCostSb.append("[");
+        for (int i=0; i<transferCost.length; i++) {
+            transferCostSb.append("[");
+            for (int j=0; j<transferCost[0].length; j++) {
+                transferCostSb.append(transferCost[i][j] +",");
+            }
+            transferCostSb.deleteCharAt(transferCostSb.length()-1);
+            transferCostSb.append("],");
+        }
+        transferCostSb.deleteCharAt(transferCostSb.length()-1);
+        transferCostSb.append("]");
+        System.out.println(transferCostSb.toString());
+
+        StringBuffer Jsb = new StringBuffer();
+//        Jsb.append('{');
+        for (int i=0; i<50; i++) {
+            Jsb.append(i+1 + " : 8,");
+        }
+        System.out.println(Jsb.toString());
+
+    }
+
     public static void main(String[] args) {
-        SmallDataSimulation smallDataSimulation = new SmallDataSimulation();
-        smallDataSimulation.toTxt();
+        SmallDataSimulationMiddle smallDataSimulation = new SmallDataSimulationMiddle();
+        smallDataSimulation.generatePythonData();
+//        smallDataSimulation.toTxt();
 //        System.out.println(smallDataSimulation.readTxt());
 
 //        int[][] transferTime =  getTransferTime(resourceSize);

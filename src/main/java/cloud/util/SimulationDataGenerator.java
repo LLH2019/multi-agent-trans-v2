@@ -130,7 +130,8 @@ public class SimulationDataGenerator {
                     List<List<int[]>> datas = simulationDataGenerator.generateData(taskSize * taskNum, resourceSize);
                     int[][] resourceDis = simulationDataGenerator.generateResourceDis(resourceSize, ratio);
                     try {
-                        File writeName = new File("D:\\Coding\\JavaProject\\multi-agent-trans-v1\\data\\write-with-cost-and-trans" + resourceSize + "-" + (taskSize * taskNum) + "-" + ratio + "-" + rapid + ".txt"); // 相对路径，如果没有则要建立一个新的output.txt文件
+                        File writeName = new File("D:\\Coding\\JavaProject\\multi-agent-trans-v1\\data2\\write-with-cost-and-trans" + resourceSize + "-" + (taskSize * taskNum) + "-" + ratio + "-" + rapid + ".txt"); // 相对路径，如果没有则要建立一个新的output.txt文件
+                        System.out.println("数据集生成 "  + resourceSize + " " + taskSize + " " + taskNum + " " + ratio + " " + rapid);
                         if (!writeName.exists()) {
                             writeName.createNewFile(); // 创建新文件,有同名的文件的话直接覆盖
                         }

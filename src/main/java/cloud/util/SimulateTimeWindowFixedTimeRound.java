@@ -171,6 +171,7 @@ public class SimulateTimeWindowFixedTimeRound {
         for (int i=1; i<=8; i++) {
             res.add(getRelativeValue(baseEndTime*i));
         }
+
         for (int i=0; i<res.size(); i++) {
             System.out.print(res.get(i)[0] + ",");
         }

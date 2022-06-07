@@ -2,16 +2,18 @@ package cloud.util.small;
 
 import cloud.util.ResourceAgent;
 import cloud.util.TaskAgent;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import lombok.Data;
 
 import java.io.*;
 import java.util.*;
 
 /**
  * @author ：LLH
- * @date ：Created in 2022/4/25 15:34
- * @description：小规模数据仿真
+ * @date ：Created in 2022/5/22 15:50
+ * @description：链式转让仿真
  */
-public class SmallDataSimulation {
+public class LinkExchangeContractSimulation {
     public static int resourceSize  = 5;
     public static int taskSize = 10;
     public static int totalProcessNum = 25;
@@ -106,108 +108,6 @@ public class SmallDataSimulation {
         return taskAgents;
     }
 
-
-
-
-    public void toTxt() {
-        SituationData situationData = new SituationData();
-        situationData.setTransferTime(getTransferTime(resourceSize));
-        situationData.setTransferCost(getTransferCost(resourceSize));
-        situationData.setResourceAgents(simulationResourceAgents(baseEndTime));
-        situationData.setTaskAgents(simulateTaskAgents(baseEndTime));
-        try {
-            File writeName = new File("D:\\Coding\\JavaProject\\multi-agent-trans-v2\\data\\small-scale" + resourceSize + "-" + taskSize + "1.txt"); // 相对路径，如果没有则要建立一个新的output.txt文件
-            if (!writeName.exists()) {
-                writeName.createNewFile(); // 创建新文件,有同名的文件的话直接覆盖
-            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(writeName));
-            // 写入transferTime
-            int[][] transferTime = situationData.getTransferTime();
-            for (int i = 0; i < transferTime.length; i++) {
-                StringBuffer sb = new StringBuffer();
-                for (int j = 0; j < transferTime[0].length; j++) {
-                    sb.append(transferTime[i][j]);
-                    sb.append(',');
-                }
-                sb.deleteCharAt(sb.length() - 1);
-                out.write(sb.toString());
-                out.newLine();
-            }
-
-            // 写入transferCost
-            int[][] transferCost = situationData.getTransferCost();
-            for (int i = 0; i < transferCost.length; i++) {
-                StringBuffer sb = new StringBuffer();
-                for (int j = 0; j < transferCost[0].length; j++) {
-                    sb.append(transferCost[i][j]);
-                    sb.append(',');
-                }
-                sb.deleteCharAt(sb.length() - 1);
-                out.write(sb.toString());
-                out.newLine();
-            }
-
-            // 写入制造资源Agent
-            List<ResourceAgent> resourceAgents = situationData.getResourceAgents();
-
-            for (int i = 0; i < resourceAgents.size(); i++) {
-                ResourceAgent resourceAgent = resourceAgents.get(i);
-                StringBuffer sb = new StringBuffer();
-                sb.append(resourceAgent.getResourceNo());
-                out.write(sb.toString());
-                out.newLine();
-
-
-                StringBuffer sb2 = new StringBuffer();
-                for (Map.Entry<Integer, Integer> entry : resourceAgent.getProcessTimeMap().entrySet()) {
-                    sb2.append(entry.getKey());
-                    sb2.append(',');
-                    sb2.append(entry.getValue());
-                    sb2.append(',');
-                }
-                sb2.deleteCharAt(sb2.length() - 1);
-                out.write(sb2.toString());
-                out.newLine();
-
-                StringBuffer sb1 = new StringBuffer();
-                for (Map.Entry<Integer, Integer> entry : resourceAgent.getProcessCostMap().entrySet()) {
-                    sb1.append(entry.getKey());
-                    sb1.append(',');
-                    sb1.append(entry.getValue());
-                    sb1.append(',');
-                }
-                sb1.deleteCharAt(sb1.length() - 1);
-                out.write(sb1.toString());
-                out.newLine();
-            }
-            // 写入制造任务Agent
-            List<TaskAgent> taskAgents = situationData.getTaskAgents();
-            for (int i=0; i<taskAgents.size(); i++) {
-                TaskAgent taskAgent = taskAgents.get(i);
-                StringBuffer sb = new StringBuffer();
-                for (int j=0; j<taskAgent.getSubTaskList().size(); j++) {
-                    sb.append(taskAgent.getSubTaskList().get(j));
-                    sb.append(',');
-                }
-                sb.deleteCharAt(sb.length()-1);
-                out.write(sb.toString());
-                out.newLine();
-
-                StringBuffer sb1 = new StringBuffer();
-                for (int j=0; j<taskAgent.getSubTaskRewardList().size(); j++) {
-                    sb1.append(taskAgent.getSubTaskRewardList().get(j));
-                    sb1.append(',');
-                }
-                sb1.deleteCharAt(sb1.length()-1);
-                out.write(sb1.toString());
-                out.newLine();
-            }
-            out.flush(); // 把缓存区内容压入文件
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public SituationData readTxt() {
         int[][] transferTime = new int[resourceSize][resourceSize];
@@ -306,20 +206,55 @@ public class SmallDataSimulation {
     }
 
     public static void main(String[] args) {
-        SmallDataSimulation smallDataSimulation = new SmallDataSimulation();
-        smallDataSimulation.toTxt();
-//        System.out.println(smallDataSimulation.readTxt());
+//        for (int i=0;)
+        // 读取相关数据，此处为初次分配的情况
 
-//        int[][] transferTime =  getTransferTime(resourceSize);
-//        for (int i=0; i<transferTime.length; i++) {
-//            StringBuffer sb = new StringBuffer();
-//            for (int j=0; j<transferTime[0].length; j++) {
-//                sb.append(transferTime[i][j]);
-//                sb.append(',');
-//            }
-//            sb.deleteCharAt(sb.length()-1);
-//            System.out.println(sb.toString());
-//        }
+
+        System.out.println("发现新的可接收合同");
+        System.out.println("10 2 21");
+        System.out.println("制造资源 4");
+        System.out.println("(7 1 17) (1 2 4) (4 4 18) (9 2 23) (1 6 18) (7 2 18) (3 4 18) (5 2 5) (6 3 5)");
+        System.out.println("(7 1 17) 3 2714");
+        System.out.println("(9 2 23) 3 2772");
+        System.out.println("制造资源 5");
+        System.out.println("(4 2 2) (5 1 11) (1 4 24) (2 2 21) (2 3 10) (3 3 21) (2 5 10) (3 5 15)");
+        System.out.println("(5 1 11) 2 2691");
+        System.out.println("(1 4 24) 3 2872");
+        System.out.println("(2 3 10) 2 2711");
+        System.out.println();
+
+        System.out.println("发现可交换的合同");
+        System.out.println("(8 1 7 1) (9 2 23 4) 123");
+
     }
+    @Data
+    class MdResource {
+        Integer resourceNo;
+        List<int[]> subTaskList;
+    }
+    @Data
+    class MdTask {
+        Integer taskNo;
+        List<Integer> processResourceList;
+    }
+
+//
+//    List<MdResource> getMdResourceList() {
+//        List<MdResource> mdResources = new ArrayList<>();
+//        for (int i=1; i<=5; i++) {
+//            MdResource mdResource = new MdResource();
+//            mdResource.setResourceNo(i);
+//        }
+//
+//    }
+//
+//    List<MdTask> getMdTaskList() {
+//        List<MdTask> mdTasks = new ArrayList<>();
+//        for (int i=1; i<=10; i++) {
+//            MdTask mdTask = new MdTask();
+//            mdTask.setTaskNo(i);
+//
+//        }
+//    }
 
 }
